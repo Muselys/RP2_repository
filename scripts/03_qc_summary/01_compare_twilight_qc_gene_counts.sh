@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # -----------------------------------------------------------------------------
 # This script compares gene counts per species after Twilight filtering vs after
 # QC filtering. It:

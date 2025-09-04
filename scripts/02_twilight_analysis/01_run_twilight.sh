@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # -----------------------------------------------------------------------------
 # Submits an LSF job to run classify_genes_1.R (species-level twilight analysis)
 # using the filtered Panaroo Rtab and the new groups.tab.

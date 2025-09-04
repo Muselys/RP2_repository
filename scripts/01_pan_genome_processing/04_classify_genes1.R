@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # classify_genes1.R
 # -----------------------------------------------------------------------------
 # Adapted from: https://github.com/ghoresh11/twilight/blob/master/classify_genes.R

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # -----------------------------------------------------------------------------
 # Extracts SSC targets and maps them to clustering IDs using a single-pass,
 # RAM-safe stream over gene_data.csv. Outputs a per-target summary and a final

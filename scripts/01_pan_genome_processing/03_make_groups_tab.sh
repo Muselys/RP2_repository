@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # -----------------------------------------------------------------------------
 # Creates a Twilight-compatible groups.tab from samples_twilight.tsv by keeping
 # only the first two columns (sample_id, species) and converting TSV → TAB.
