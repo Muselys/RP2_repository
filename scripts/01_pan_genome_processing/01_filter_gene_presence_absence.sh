@@ -100,7 +100,7 @@ matched_in_header=$(
 )
 header_nontarget=$(( orig_samples - matched_in_header ))
 
-# --- Filter RTAB (no pv) + count all-zero drops ---
+# --- Filter RTAB + count all-zero drops ---
 GENE_DROP_FILE="$OUT_DIR/.tmp_genes_dropped.count"
 AWK_BIN=$(command -v mawk || command -v awk)
 

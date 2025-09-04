@@ -13,7 +13,7 @@ bsub -q normal \
     -R "select[mem>300000] rusage[mem=300000] span[hosts=1]" \
     -M 300000 \
     bash -lc 'module load ISG/conda && conda activate rconda && \
-    Rscript /data/pam/team230/sm71/scratch/rp2/twilight_input/classify_genes_1.R \
-        -p /data/pam/team230/sm71/scratch/rp2/panaroo_output/gene_presence_absence.filtered.Rtab \
+    Rscript /data/pam/team230/sm71/scratch/rp2/twilight_input/classify_genes.R \
+        -p /data/pam/team230/sm71/scratch/rp2/panaroo_output/gene_presence_absence_filtered.Rtab \
         -g /data/pam/team230/sm71/scratch/rp2/twilight_input/groups.tab \
         -o /data/pam/team230/sm71/scratch/rp2/twilight_output'

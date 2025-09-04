@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env Rscript
 # classify_genes1.R
 # -----------------------------------------------------------------------------
 # Adapted from: https://github.com/ghoresh11/twilight/blob/master/classify_genes.R
@@ -68,7 +68,7 @@ if (rare_threshold >= core_threshold) { stop("Rare threshold must be smaller tha
 ## check if output directory exists, and create if not
 if (!dir.exists(out)) { dir.create(out) }
 
-output_frequnecy_matrix = file.path(out,"frequencies.csv")
+output_frequency_matrix = file.path(out,"frequencies.csv")
 output_classification_table = file.path(out,"classification.tab")
 output_genes_per_isolate = file.path(out, "genes_per_isolate.tab")
 
@@ -96,20 +96,20 @@ if (length(missing) > 0)  {
 }
 
 
-## The column with the genome names is called ID in my casgroups = unique(grouping$grouping)  ## names of groups
-species_sizes = table(grouping$grouping)
 
-groups_to_keep = names(which(species_sizes >= min_size)) # ignoring anything smaller than min_size
-num_species = length(groups_to_keep) ## count how many species there are
+species_sizes = table(grouping$species)
 
-if (num_species < 2) { stop("Not enough species to compared with at least min_size isolates! Try decreasing min_size to compare smaller groups.") }
+species_to_keep = names(which(species_sizes >= min_size)) # ignoring anything smaller than min_size
+num_species = length(species_to_keep) ## count how many groups there are
+
+if (num_species < 2) { stop("Not enough groups to compared with at least min_size isolates! Try decreasing min_size to compare smaller groups.") }
 
 ## extract the names of the genes, they should be in the first column
 gene_names = as.character(unlist(complete_presence_absence[,1]))
 
 ## create a dataframe where each group has the frequency of each gene
-group_freqs = data.frame(matrix(ncol = num_groups, nrow = length(gene_names)))
-colnames(group_freqs) = groups_to_keep
+group_freqs = data.frame(matrix(ncol = num_species, nrow = length(gene_names)))
+colnames(group_freqs) = species_to_keep
 
 ## create a vector of frequencies for each group
 for (sp in species_to_keep) {
@@ -123,11 +123,9 @@ for (sp in species_to_keep) {
 rownames(group_freqs) = gene_names
 
 write.table(x = data.frame(Gene = gene_names, group_freqs),
-            file = output_frequnecy_matrix, sep = ',', col.names = T, row.names = F, quote = F)
+            file = output_frequency_matrix, sep = ',', col.names = T, row.names = F, quote = F)
 
-# ## when debugging -> read in a table
-# group_freqs = read.table(file = "~/cholera_club/process_clustering/out/frequencies.csv", sep = ",", comment.char = "", stringsAsFactors = F,
-#            header = T)
+
 
 # initiate a dataframe for the output
 classification = data.frame(gene_name = gene_names,
@@ -136,6 +134,7 @@ classification = data.frame(gene_name = gene_names,
                             rare = rep(0, length(gene_names)),
                             total = rep(0, length(gene_names)),
                             details = rep("", length(gene_names)), stringsAsFactors = F   )
+
 
 ## loop to count for each gene -> this takes a while
 for (i in 1:dim(classification)[1]) {
@@ -186,17 +185,16 @@ classification$specific_class[which(classification$general_class == "Absent acro
 ## finally, save the file
 write.table(classification, file = output_classification_table, sep = "\t", col.names = T, row.names = F, quote = F)
 
-# classification = read.table("~/cholera_club/process_clustering/out/classification.tab", sep = "\t", header = T,
-#                             comment.char = "", stringsAsFactors = F)
+
 
 ## Calculate typical values for the whole dataset, and for each species
 genes_per_isolate = data.frame(species = character(0),
                              class = character(0),
                              count= numeric(0), stringsAsFactors = F)
 
-for (sp in species_to_keep) {
-  print(sp)
-  sample_names = grouping$ID[which(grouping$species == sp)]
+for (curr in species_to_keep) {
+  print(curr)
+  sample_names = grouping$ID[which(grouping$species == curr)]
   samples = which(colnames(complete_presence_absence) %in% sample_names)
   curr_presence_absence = data.frame(complete_presence_absence[,..samples])
   for (gene_class in unique(classification$specific_class)) {
@@ -204,16 +202,14 @@ for (sp in species_to_keep) {
     gene_class_presence_absence = curr_presence_absence[which(gene_names %in% classification$gene_name[which(classification$specific_class == gene_class)]),]
     num_genes = colSums(gene_class_presence_absence)
     genes_per_isolate = rbind(genes_per_isolate ,
-                            data.frame(cluster = rep(curr, length(num_genes)),
+                            data.frame(species = rep(curr, length(num_genes)),
                                        class = rep(gene_class, length(num_genes)),
                                        count = num_genes, stringsAsFactors = F))
     
   }
 }  
 
-write.table(genes_per_isolate, file = output_genes_per_isolate, sep = "\t", col.names = T, row.names = T, quote = F)
-# genes_per_isolate = read.table("~/cholera_club/process_clustering/out/genes_per_isolate.tab", sep = "\t",
-#                                comment.char = "", stringsAsFactors = F, header = T)
+write.table(genes_per_isolate, file = output_genes_per_isolate, sep = "\t", col.names = T, row.names = F, quote = F)
 
 ############# PLOTTING ############# 
 
@@ -226,7 +222,7 @@ colours = data.frame(
   Class = c( "Species specific core","Multi-species core", "Collection core","Species specific intermediate",
              "Multi-species intermediate","Collection intermediate","Species specific rare", "Multi-species rare" ,
              "Collection rare", "Intermediate and rare","Core, intermediate and rare","Core and rare", "Core and intermediate",
-             "Absent across species"),
+             "Absent in large species"),
   Colour = c("#542788","#8c96c6","#08519c","#fa9fb5","#c51b8a","#7d1158",
              "#fec44f","#d95f0e","#b1300b","#edf8e9","#bae4b3","#74c476","#238b45", "#d3d3d3"), stringsAsFactors = F
 )
@@ -262,8 +258,7 @@ mean_without_zeros <- function(x) {
     return (mean(x[-zeros]))
   }
   return(mean(x))
-
-  }
+}
 classification$means =  apply(X = group_freqs, 1, FUN = mean_without_zeros)
 classification$means[classification$total == 0] = NA
 classification$jitter_total = jitter(classification$total, amount = 0.1)
@@ -274,8 +269,8 @@ C =  ggplot(classification, aes(y = means, x = jitter_total, fill = specific_cla
 ggsave(C, filename = file.path(plots_out, "hex_plain.pdf"), height = 5, width= 7)
 
 
-#### typical E. coli
-mean_per_species = aggregate(x = genes_per_isolate$count, by = list(genes_per_isolate$cluster, genes_per_isolate$class), median)
+#### Typical genome (median per class)
+mean_per_species = aggregate(x = genes_per_isolate$count, by = list(genes_per_isolate$species, genes_per_isolate$class), median)
 mean_all = aggregate(mean_per_species$x, by = list(mean_per_species$Group.2), median)
 colnames(mean_all) = c("Class","Count")
 mean_all$Count = round(mean_all$Count , digits = 0)
@@ -302,7 +297,7 @@ if (!dir.exists(plots_out)) { dir.create(plots_out) }
 
 for (curr_class in unique(genes_per_isolate$class)) {
   curr = genes_per_isolate[genes_per_isolate$class == curr_class,]
-  curr$species = factor(curr$species, names(sort(group_sizes, decreasing = T)))
+  curr$species = factor(curr$species, names(sort(species_sizes, decreasing = T)))
   med_all = median(aggregate(by = list(curr$species), x = curr$count, FUN = median)$x)
   p = ggplot(curr, aes(x = species, y = count)) + geom_boxplot(fill = "#eeeeee") +
     theme_classic(base_size = 12) + ylab(paste("Number of  '", curr_class, "'  genes\nper genome", sep = "")) +
@@ -315,7 +310,7 @@ for (curr_class in unique(genes_per_isolate$class)) {
 
 ## PCA plots
 create_pca_plot <- function(class, comp = F){
-  if (class %in% c("Absent across species","Collection core",
+  if (class %in% c("Absent in large species","Collection core",
                    "Species specific rare", "Species specific core" , "Species specific intermediate" )){
       return()}
   curr_freqs = group_freqs[which(rownames(group_freqs) %in% classification$gene_name[classification$specific_class == class]),]
@@ -329,7 +324,7 @@ create_pca_plot <- function(class, comp = F){
   if (length(remove) > 0) {
     for_pca = for_pca[,-remove]
   }
-  ### PCA plot of the clusters -> what are the relationships between the clusters based on the frequencies of all genes
+  ### PCA plot of the species -> what are the relationships between the species based on the frequencies of all genes
   freqs.pca = prcomp(for_pca , center = T)
   summary_pca = summary(freqs.pca)
   importance = round(summary_pca$importance[2,1:2] * 100, digits = 2)
@@ -349,3 +344,9 @@ create_pca_plot <- function(class, comp = F){
 plots_out = file.path(out,"plots/pca_per_class/")
 if (!dir.exists(plots_out)) { dir.create(plots_out) }
 sapply(unique(genes_per_isolate$class), FUN = create_pca_plot)
+
+
+
+
+
+
