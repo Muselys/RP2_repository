@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# -----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------------------------------------
 # This script filters a Panaroo gene_presence_absence.Rtab file
 # It keeps only the samples listed in an "allowed samples" file
 # It removes genes that are absent (0/blank) across all kept samples
@@ -7,11 +7,11 @@
 # The script is set up to run on an LSF cluster with memory and time limits
 # It also performs sanity checks (input files exist, sample IDs match)
 # If no sample IDs match, it fails early instead of producing an empty/useless file
-# -----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------------------------------------
 
 #BSUB -J filter_rtab
-#BSUB -o logs/filter_rtab.%J.out
-#BSUB -e logs/filter_rtab.%J.err
+#BSUB -o /data/pam/team230/sm71/scratch/rp2/logs/filter_rtab.%J.out
+#BSUB -e /data/pam/team230/sm71/scratch/rp2/logs/filter_rtab.%J.err
 #BSUB -n 1
 #BSUB -M 4000
 #BSUB -R "select[mem>4000] rusage[mem=4000]"
