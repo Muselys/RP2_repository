@@ -6,7 +6,7 @@
 # -----------------------------------------------------------------------------
 
 #Twilight analysis: species-level
-bsub -q yesterday \
+bsub -q normal \
     -o /data/pam/team230/sm71/scratch/rp2/twilight_input/logs/twilight_%J.out \
     -e /data/pam/team230/sm71/scratch/rp2/twilight_input/logs/twilight_%J.err \
     -R "select[mem>300000] rusage[mem=300000] span[hosts=1]" \
