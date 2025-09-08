@@ -1,5 +1,5 @@
 #!/usr/bin/env Rscript
-# classify_genes1.R
+#Located: /data/pam/team230/sm71/scratch/rp2/twilight_analysis/classify_genes.R
 # -----------------------------------------------------------------------------
 # Adapted from: https://github.com/ghoresh11/twilight/blob/master/classify_genes.R
 # Original author: Gal Horesh (https://github.com/ghoresh11)

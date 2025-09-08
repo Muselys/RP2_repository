@@ -4,8 +4,6 @@
 # clustering_ids from the QC table, writing one FASTA per (species, gene).
 #
 # IMPORTANT ORDER:
-# - Run the QC merge first: scripts/05_blast_qc/01_qc_prune_pm_ids.sh
-#   (This produces species_specific_core_with_clustering_id_qc.tab used here.)
 #
 # What it does:
 # 1) Read species_specific_core_with_clustering_id_qc.tab (4 cols) and map:

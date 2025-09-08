@@ -22,15 +22,15 @@
 #BSUB -o /data/pam/team230/sm71/scratch/rp2/logs/filter_rtab.%J.out
 #BSUB -e /data/pam/team230/sm71/scratch/rp2/logs/filter_rtab.%J.err
 #BSUB -n 1
-#BSUB -M 8000
-#BSUB -R "select[mem>8000] rusage[mem=8000]"
+#BSUB -M 4000
+#BSUB -R "select[mem>4000] rusage[mem=4000]"
 
 set -euo pipefail
 export LC_ALL=C   # faster parsing
 
 META_DIR="/data/pam/team230/sm71/scratch/rp2/metadata"
 IN_DIR="/data/pam/team230/sm71/scratch/rp2/panaroo_output"
-OUT_DIR="/data/pam/team230/sm71/scratch/rp2/panaroo_output"
+OUT_DIR="/data/pam/team230/sm71/scratch/rp2/pan_genome_processing"
 
 FILE4="$META_DIR/File4_QC_characterisation_661K.tsv"
 RTAB="$IN_DIR/gene_presence_absence.Rtab"
@@ -72,41 +72,52 @@ Enterococcus faecalis
 EOF
 echo "Stage 1: Done (18 target species listed)."
 
-# --- Build keep-set from File4: (species ∧ high_quality==TRUE) ---
+# --- Build set of sample IDs present in the RTAB header ---
+TMP_HEADER="$OUT_DIR/.tmp_rtab_header_ids.txt"
+
+echo "Stage 1.5: Extracting sample IDs from RTAB header -> $TMP_HEADER"
+head -n1 "$RTAB" | cut -f2- | tr '\t' '\n' | sort -u > "$TMP_HEADER"
+echo "Stage 1.5: Header IDs: $(wc -l < "$TMP_HEADER")"
+
+# --- Build keep-set from File4, but only for IDs also present in RTAB header ---
 KEEP_IDS="$OUT_DIR/.keep_ids.txt"
 TMP_SPEC_COUNT="$OUT_DIR/.tmp_species_candidates.count"
 TMP_HQ_REMOVED="$OUT_DIR/.tmp_hq_removed.count"
 
-echo "Stage 2: Building keep-set from $FILE4 (target species ∧ high_quality==TRUE)"
+
+echo "Stage 2: Building keep-set (target species ∧ high_quality==TRUE) ∩ Rtab header"
 awk -F'\t' -v KEEP="$KEEP_IDS" -v SPEC="$TMP_SPEC_COUNT" -v HQREM="$TMP_HQ_REMOVED" '
+# 1) load allowlist species
 FNR==NR {
-  # TARGET: single col "species" (skip header)
   if (NR>1 && $1!="") tgt[$1]=1
   next
 }
-FNR==1 { next }  # skip FILE4 header
-{
-  # Assume: FILE4 col1=sample_id, col2=species, last column=high_quality
-  sid = $1
-  sp  = $2
-  hq  = $NF
+# 2) load RTAB header sample IDs (one per line)
+FILENAME==ARGV[2] {
+  hdr[$1]=1
+  next
+}
+# 3) scan File4 and count only those rows whose sample_id is in hdr
+FILENAME==ARGV[3] {
+  if (FNR==1) next  # skip header
+  sid=$1; sp=$2; hq=$NF
   if (sid=="" || sp=="") next
-
-  if (sp in tgt) {
-    spec_candidates++
-    if (hq=="TRUE") {          # strict TRUE; change to tolower(hq)=="true" for case-insensitive
+  if ((sp in tgt) && (sid in hdr)) {
+    spec_candidates++            # candidates *that actually exist in the RTAB header*
+    if (tolower(hq)=="true") {
       keep[sid]=1
     } else {
       hq_removed++
     }
   }
+  next
 }
 END {
   for (k in keep) print k > KEEP
   print (spec_candidates+0) > SPEC
   print (hq_removed+0) > HQREM
 }
-' "$TARGET" "$FILE4"
+' "$TARGET" "$TMP_HEADER" "$FILE4"
 
 echo "Stage 3: De-duplicating keep IDs"
 sort -u -o "$KEEP_IDS" "$KEEP_IDS"
@@ -115,7 +126,7 @@ sort -u -o "$KEEP_IDS" "$KEEP_IDS"
 species_candidates=$(cat "$TMP_SPEC_COUNT")
 hq_removed=$(cat "$TMP_HQ_REMOVED")
 post_hq_candidates=$(wc -l < "$KEEP_IDS")
-echo "Stage 3: Candidates in File4 (target species): $species_candidates"
+echo "Stage 3: Candidates present in RTAB header (target species): $species_candidates"
 echo "Stage 3: Removed by high_quality!=TRUE: $hq_removed"
 echo "Stage 3: Kept sample IDs after HQ filter: $post_hq_candidates"
 
@@ -189,7 +200,7 @@ echo "Stage 8: Writing summary → $SUMMARY"
   echo -e "Original_Rtab_Samples\t$orig_samples"
   echo -e "Original_Rtab_Genes\t$orig_genes"
   echo -e "Target_Species_Listed\t18"
-  echo -e "Species_Candidates_in_File4\t$species_candidates"
+  echo -e "Species_Candidates_in_RtabHeader\t$species_candidates"
   echo -e "Removed_by_high_quality_FALSE\t$hq_removed"
   echo -e "Candidates_after_HQ_TRUE\t$post_hq_candidates"
   echo -e "Matched_in_Rtab_Header\t$matched_in_header"
@@ -209,14 +220,3 @@ printf "Genes dropped (all-zero across kept samples): %s\n" "$genes_dropped_all_
 printf "Original Rtab: %s samples, %s genes\n" "$orig_samples" "$orig_genes"
 printf "Filtered Rtab: %s samples, %s genes\n" "$filt_samples" "$filt_genes"
 printf "Summary: %s\n" "$SUMMARY"
-
-
-#######
-#Results
-#Kept sample IDs (post-HQ TRUE): 141550
-#Removed due to high_quality!=TRUE: 2801
-#Header non-target (not in keep-set): 1740
-#Genes dropped (all-zero across kept samples): 81909
-#Original Rtab: 143290 samples, 203994 genes
-#Filtered Rtab: 141550 samples, 122085 genes
-#Summary: /data/pam/team230/sm71/scratch/rp2/panaroo_output/rtab_filter_summary.txt

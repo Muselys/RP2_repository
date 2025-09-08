@@ -29,9 +29,9 @@ set -euo pipefail
 export LC_ALL=C
 
 META_DIR="/data/pam/team230/sm71/scratch/rp2/metadata"
-IN_RTAB="/data/pam/team230/sm71/scratch/rp2/panaroo_output/gene_presence_absence_filtered.Rtab"
+IN_RTAB="/data/pam/team230/sm71/scratch/rp2/pan_genome_processing/gene_presence_absence_filtered.Rtab"
 FILE4="$META_DIR/File4_QC_characterisation_661K.tsv"
-OUT_DIR="/data/pam/team230/sm71/scratch/rp2/twilight_input"
+OUT_DIR="/data/pam/team230/sm71/scratch/rp2/pan_genome_processing"
 OUT="$OUT_DIR/groups.tab"
 
 mkdir -p "$OUT_DIR"
