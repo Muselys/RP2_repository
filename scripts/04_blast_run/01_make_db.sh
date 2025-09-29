@@ -1,41 +1,55 @@
-#!/usr/bin/env bash
-# -----------------------------------------------------------------------------
-# Builds a BLAST+ nucleotide database from a combined reference FASTA on LSF.
-#
-# What it does:
-# - Submits an LSF job that loads BLAST 2.14.1 and runs `makeblastdb`.
-# - Input FASTA: /data/.../blast/references/combined_references.fa
-# - Output DB prefix: /data/.../blast/references/db  (BLAST+ will create .nhr/.nin/.nsq,
-#   and multi-volume files like db.00.nsq, db.01.nsq, etc. if large)
-# - Logs stdout/stderr to: /data/.../blast/logs/makeblastdb.<JOBID>.out|.err
-#
-# LSF resources:
-# - Queue: normal
-# - Cores: 1
-# - Memory: 4 GB (select[mem>4000] rusage[mem=4000], -M 4000)
-#
-# Notes:
-# - `-dbtype nucl` builds a nucleotide DB (use this for nucleotide BLASTs).
-# - Use the DB by passing `-db /data/.../blast/references/db` to blastn, etc.
-# - Very large inputs will be split into multiple volumes automatically.
-# - Module path/version may differ on other clusters; adjust `module load` as needed.
-#
-# Run metadata (example from a previous run):
-# - Start→Finish: ~56 min walltime
-# - Host: node-14-17 (queue: normal)
-# - Sequences: ~10M
-# - Output DB size: ~65 GB (23 volumes)
-# - CPU time: ~56 min; Max RSS: ~107 MB
-# -----------------------------------------------------------------------------
+#REF Map ID to Sample_ID located here:
+#/data/pam/team230/sm71/scratch/rp2/blast_run/ref19_norm/non_db_stuff.ref19_norm.map.tsv
 
-bsub -q normal\
-  -J makeblastdb \
-  -n 1 -R "select[mem>4000] rusage[mem=4000]" \
-  -M 4000 \
-  -o /data/pam/team230/sm71/scratch/rp2/blast/logs/makeblastdb.%J.out \
-  -e /data/pam/team230/sm71/scratch/rp2/blast/logs/makeblastdb.%J.err \
-  "bash -lc 'module load blast/2.14.1--pl5321h6f7f691_0 && \
-    makeblastdb -in /data/pam/team230/sm71/scratch/rp2/blast/references/combined_references.fa \
-      -dbtype nucl \
-      -out /data/pam/team230/sm71/scratch/rp2/blast/references/db'"
+#!/usr/bin/env bash
+#BSUB -J makeblastdb_ref19_norm
+#BSUB -q yesterday
+#BSUB -n 4
+#BSUB -R "span[hosts=1] select[mem>32000] rusage[mem=32000]"
+#BSUB -M 32000
+#BSUB -o /data/pam/team230/sm71/scratch/rp2/logs/makeblastdb_ref19_norm.%J.out
+#BSUB -e /data/pam/team230/sm71/scratch/rp2/logs/makeblastdb_ref19_norm.%J.err
+
+set -euo pipefail
+module load blast/2.14.1--pl5321h6f7f691_0
+
+# --- INPUTS ---
+SRC="/data/pam/team230/sm71/scratch/rp2/blast_run/combined_ref.fa"
+OUTDIR="/lustre/scratch127/pam/teams/team230/sm71/rp2/blast_run/ref19_norm"
+NORM_FA="$OUTDIR/ref19_norm.fa"
+MAP_TSV="$OUTDIR/ref19_norm.map.tsv"
+DB_BASE="$OUTDIR/ref19_norm"
+
+mkdir -p "$OUTDIR"
+
+echo "[START] $(date) Normalizing headers"
+awk 'BEGIN{FS=" "; OFS="\t"}
+     /^>/{
+        ++c;
+        id=sprintf("ref19|%09d", c);
+        hdr=substr($0,2);            # full original header (without ">")
+        print id, hdr >> "'"$MAP_TSV"'";
+        print ">" id; next
+     }
+     {print}
+' "$SRC" > "$NORM_FA"
+
+echo "[INFO] Normalized FASTA written: $NORM_FA"
+echo "[INFO] Mapping table written: $MAP_TSV"
+
+echo "[START] $(date) Building BLAST DB"
+makeblastdb \
+  -dbtype nucl \
+  -input_type fasta \
+  -in "$NORM_FA" \
+  -title "combined_ref19_norm" \
+  -out "$DB_BASE" \
+  -parse_seqids \
+  -max_file_sz 3GB \
+  -logfile "$OUTDIR/makeblastdb.log"
+
+echo "[DONE] $(date)"
+ls -lh "$OUTDIR" | sed -n "1,200p"
+
+
 

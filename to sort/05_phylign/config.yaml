@@ -1,0 +1,117 @@
+###################################################################################################
+# search configuration - the parameters in this section affect results
+
+##################################################
+# general
+# batches to consider during search
+batches: "data/batches_2m.txt"
+##################################################
+
+##################################################
+# kmer matching
+
+# proportion of kmer presence between the query and the reference for matching, value between 0.00 and 1.00.
+# E.g.: if this value is 0.7, then at least 70% of the query kmers must be present in a reference to match it.
+# Lower values mean more matches and being able to recover partial hits, but also incurs into more spurious matches.
+#     Spurious matches just affect performance and not results - they are filtered out in the alignment phase.
+#     E.g. for plasmid search we recommend cobs_kmer_thres: 0.33
+# Higher values mean less but more accurate matches and faster pipeline execution, but can incur into missing matches.
+#     E.g. for gene search we recommend cobs_kmer_thres: 0.7
+cobs_kmer_thres: 0.8
+
+# number of best kmer matching hits to keep for each query record (in case of tie, all equivalent hits are included too)
+nb_best_hits: 1000
+##################################################
+
+##################################################
+# alignment
+
+# minimap2 preset. Can be:
+# map-pb/map-ont: PacBio/Nanopore vs reference mapping
+# ava-pb/ava-ont: PacBio/Nanopore read overlap
+# asm5/asm10/asm20: asm-to-ref mapping, for ~0.1/1/5% sequence divergence
+# splice: long-read spliced alignment
+# sr: genomic short-read mapping
+minimap_preset: "asm5"
+
+# other minimap2 params
+minimap_extra_params: "--eqx"
+##################################################
+###################################################################################################
+
+
+###################################################################################################
+# performance configuration - the parameters in this section does NOT affect results, just performance
+
+##################################################
+# general
+
+# overall number of threads to use in the pipeline, an integer number (e.g. 8 for 8 threads) or "all" (to use all threads)
+threads: 8
+
+# maximum RAM to use in GB - this should be at most 80% of your max RAM
+# note: if you use more than your available RAM, constant page swapping will happen and the pipeline will severely
+# slow down.
+# if index_load_mode == mmap-disk, then this parameter is ignored as the OS will manage RAM usage
+max_ram_gb: 15
+##################################################
+
+##################################################
+# kmer matching
+
+# number of threads when running COBS kmer matching
+# allowed values are:
+# auto: sets cobs_threads automatically, proportional to the amount of RAM used
+# auto(N): same as auto, but the maximum number of threads is N, where N is an integer > 0
+# N: sets cobs_threads to a fixed value N, where N is an integer > 0 (note: too many might limit the pipeline parallelism)
+# WARNING: this parameter MUST BE SET to a fixed int value when running on a cluster
+cobs_threads: 4
+
+# specify how to load the kmer index. Options are:
+# 1. mem-stream : default and preferred. With this mode, the pipeline extracts the compressed kmer index and streams
+#                 it directly into COBS, which saves it completely in RAM. This mode uses the least filesystems operations
+#                 possible, which is usually the bottleneck of this pipeline if your filesystem is slow.
+#                 If this option is set, then parameters keep_cobs_indexes and decompression_dir are ignored.
+# 2. mem-disk   : this mode extracts the compressed kmer index to the disk, and then COBS loads it completely to the RAM.
+#                 Can be an option if your filesystem is very fast. Another reason to use this mode is to speed up
+#                 subsequent searches as the kmer indexes will be already decompressed, but that also requires parameter
+#                 keep_cobs_indexes to be set to True, and will use lots of disk space.
+# 3. mmap-disk  : this mode extracts the compressed kmer index to the disk, and then COBS just loads parts of it on demand.
+#                 This can be done if you don't have enough RAM to run the pipeline, but can incur huge slowdowns, especially
+#                 if your filesystem is slow.
+#                 If this mode is selected, then the parameter max_ram_gb is ignored.
+index_load_mode: mem-stream
+
+# maximum number of I/O-heavy threads. Use this to control the amount of filesystem I/O to not overflow the filesystem.
+# it can control the amount of xz-decompression and COBS jobs (if index_load_mode == mmap-disk) that are run simultaneously.
+# in more details, this parameter controls how many I/O-heavy threads can run simultaneously.
+# I/O-heavy threads include:
+#     * 1 thread for xz-decompression of COBS kmer indexes;
+#     * 1 thread for each COBS process if index_load_mode is mmap-disk
+max_io_heavy_threads: 3
+##################################################
+
+##################################################
+# alignment
+# number of threads when running minimap2 (note: too many might limit the pipeline parallelism)
+minimap_threads: 4
+
+# prefer use pipe when running minimap (note: switch this to False only if you are on *Linux* and you have a very fast filesystem)
+prefer_pipe: True
+##################################################
+
+###################################################################################################
+
+
+###################################################################################################
+# misc configuration
+
+# keep or not the decompressed COBS indexes. If kept, can speed up subsequent searches but will take much more disk
+# space, as the decompressed indexes won't be cleaned up.
+# if index_load_mode == mem-stream, then this parameter is ignored
+keep_cobs_indexes: False
+
+# directory to store the COBS decompressed indexes. Can be used to put the decompressed indexes in an external
+# or large filesystem capable of holding them. If not defined, defaults to "intermediate/00_cobs"
+# decompression_dir: cobs_decompressed_indexes
+###################################################################################################
