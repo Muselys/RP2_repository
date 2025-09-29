@@ -222,7 +222,7 @@ colours = data.frame(
   Class = c( "Species specific core","Multi-species core", "Collection core","Species specific intermediate",
              "Multi-species intermediate","Collection intermediate","Species specific rare", "Multi-species rare" ,
              "Collection rare", "Intermediate and rare","Core, intermediate and rare","Core and rare", "Core and intermediate",
-             "Absent in large species"),
+             "Absent across species"),
   Colour = c("#542788","#8c96c6","#08519c","#fa9fb5","#c51b8a","#7d1158",
              "#fec44f","#d95f0e","#b1300b","#edf8e9","#bae4b3","#74c476","#238b45", "#d3d3d3"), stringsAsFactors = F
 )
@@ -310,7 +310,7 @@ for (curr_class in unique(genes_per_isolate$class)) {
 
 ## PCA plots
 create_pca_plot <- function(class, comp = F){
-  if (class %in% c("Absent in large species","Collection core",
+  if (class %in% c("Absent across species","Collection core",
                    "Species specific rare", "Species specific core" , "Species specific intermediate" )){
       return()}
   curr_freqs = group_freqs[which(rownames(group_freqs) %in% classification$gene_name[classification$specific_class == class]),]

@@ -6,6 +6,6 @@
 
 
 ### Input files
-- `gene_presence_absence.Rtab`: Produced internally by the GPS team (Tonkin-Hill et al., 2020). Not publicly available.  
+- `gene_presence_absence.Rtab`: Produced internally by the GPS team (Wellcome Sanger Institute). Not publicly available.  
 - `File4_QC_characterisation_661K.tsv`: Publicly available via Figshare (Blackwell et al., 2021b).  
 
