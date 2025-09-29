@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # -----------------------------------------------------------------------------
 # 03_run_twilight.sh — submit Twilight analysis as an LSF job
-# Author: Sahra Musse | License: MIT
 #
 # Purpose:
 #   Run classify_genes.R (Twilight species-level analysis) on the cluster.
