@@ -34,7 +34,4 @@ reader | awk -v OFS='\t' -v PIDENT="$PIDENT" -v QCOVS="$QCOVS" -F'\t' '
 
 #FILTER_THREADS=16 ./filter_thresholds.sh blast.annotated.tsv.gz blast.filtered.tsv.gz 80 90
 
-# zcat blast.annotated.tsv.gz | wc -l
-#5200257
-# zcat blast.filtered.tsv.gz | wc -l
-#5197281
+

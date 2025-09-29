@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 import pandas as pd, argparse, os, gzip, sys
 
-COLS17 = ["qseqid","sseqid","pident","length","mismatch","gapopen",
+COLS16 = ["qseqid","sseqid","pident","length","mismatch","gapopen",
           "qstart","qend","sstart","send","evalue","bitscore",
-          "qlen","qcovhsp","qcovs","qcovus","stitle"]
-COLS16 = COLS17[:-1]  # no stitle
+          "qlen","qcovhsp","qcovs","qcovus",]
 
 def open_maybe_gzip(path, mode="rt"):
     return gzip.open(path, mode) if path.endswith(".gz") else open(path, mode)

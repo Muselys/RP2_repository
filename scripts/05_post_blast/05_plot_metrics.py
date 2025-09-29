@@ -366,14 +366,6 @@ def main():
 if __name__ == "__main__":
     main()
 
-"""
-EVAL=/lustre/scratch127/pam/teams/team230/sm71/rp2/blast_run/post_blast/eval
-python heatmaps_final.py \
-  --predictions "$EVAL/predictions_pre_post.tsv" \
-  --species-file /lustre/scratch127/pam/teams/team230/sm71/rp2/blast_run/post_blast/targets_18.txt \
-  --outdir "$EVAL" \
-  --genes-top 300 --max-genes 300 --min-gene-count 1
 
-"""
 
 
